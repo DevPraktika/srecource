@@ -1,0 +1,15 @@
+apiVersion: v2
+
+name: srecource
+description: A Helm chart for SreCourceApi
+
+type: application
+
+version: 0.1.0
+appVersion: "0e6cd26"
+
+dependencies:
+- condition: postgresql.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 11.9.13

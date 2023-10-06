@@ -1,0 +1,167 @@
+# Default values for srecource.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+### SreCourceApi ###
+
+dotnetEnv: Development
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/ldest/sre-course/api
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "0e6cd26"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
+#livenessProbe:
+#  httpGet:
+#    path: /
+#    port: http
+#readinessProbe:
+#  httpGet:
+#    path: /
+#    port: http
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0 
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: api.student65.sre
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: srecource-tls
+  #    hosts:
+  #      - api.student65.sre
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+### --SreCourceApi-- ###
+
+### External database configuration ###
+# All of these values are only used if 'postgresql.enabled=false'
+externalPostgresql:
+  ## Database host
+  host: "srecource-postgresql"
+
+  ## Database port
+  port: "5432"
+
+  ## Database user
+  user: "sre_user"
+
+  ## Database password
+  password: "sre_password"
+
+  ## Database name
+  database: "sredatabase"
+
+  ## Use a existing secret
+  existingSecret: {}
+#    secretName: nameofsecret
+#    passwordKey: db-password
+
+### Internal database configuration ###
+# For Development, Tests
+# PostgreSQL chart configuration
+# for more options see https://github.com/bitnami/charts/tree/master/bitnami/postgresql
+postgresql:
+  # Used external database else false
+  enabled: true
+  architecture: standalone
+
+  auth:
+    username: sre_user
+    password: sre_password
+    database: sredatabase
+    existingSecret: ""
+
+  primary:
+    initdb:
+      scripts:
+        init-sre-db.sql: |
+              create table if not exists public.cities
+              (
+                  id   bigserial,
+                  name varchar(255)
+              );
+              create table if not exists public.forecast
+              (
+                  id          bigserial,
+                  "cityId"    bigint,
+                  "dateTime"  bigint,
+                  temperature integer,
+                  summary     text
+              );
+              INSERT INTO cities (name) VALUES ('Rostov-on-Don');
+              INSERT INTO cities (name) VALUES ('Krasnodar');
+              INSERT INTO cities (name) VALUES ('Sochi');
+              INSERT INTO cities (name) VALUES ('Moscow');
+              INSERT INTO forecast ("cityId", "dateTime", temperature, summary) VALUES (1, 96563, 30, 'Very hot');
+              INSERT INTO forecast ("cityId", "dateTime", temperature, summary) VALUES (2, 86775, 28, 'Hot');
+              INSERT INTO forecast ("cityId", "dateTime", temperature, summary) VALUES (3, 67456, 26, 'Normal');
+              INSERT INTO forecast ("cityId", "dateTime", temperature, summary) VALUES (4, 56895, 22, 'OK');
+    persistence:
+      enabled: false
+    # storageClass: ""
+    resources:
+      limits:
+        cpu: 200m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 80Mi

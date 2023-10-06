@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "srecource.fullname" . }}
+  labels:
+    {{- include "srecource.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "srecource.selectorLabels" . | nindent 6 }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "srecource.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "srecource.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:{{ .Values.service.port }}"
+            - name: DOTNET_ENVIRONMENT
+              value: {{ default "Production" .Values.dotnetEnv | quote }}
+            {{- if .Values.postgresql.enabled }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.auth.existingSecret | default (include "call-nested" (list . "postgresql" "common.names.fullname")) }}
+                  key: {{ .Values.postgresql.auth.secretKeys.userPasswordKey | default "password" | quote }}
+            {{- $postgres_host := include "call-nested" (list . "postgresql" "postgresql.primary.fullname") }}
+            - name: ConnectionStrings__PgConnection
+              value: {{ printf "User ID=%s;Password=$(DATABASE_PASSWORD);Host=%s;Port=%s;Database=%s;" .Values.postgresql.auth.username $postgres_host "5432" .Values.postgresql.auth.database | quote }}
+            {{- else }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalPostgresql.existingSecret.secretName | default (printf "%s-%s" .Release.Name "db") }}
+                  key: {{ .Values.externalPostgresql.existingSecret.passwordKey | default "db-password" | quote }}
+            - name: ConnectionStrings__PgConnection
+              value: {{ printf "User ID=%s;Password=$(DATABASE_PASSWORD);Host=%s;Port=%s;Database=%s;" .Values.externalPostgresql.user .Values.externalPostgresql.host .Values.externalPostgresql.port .Values.externalPostgresql.database | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
