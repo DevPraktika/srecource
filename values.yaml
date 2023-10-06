@@ -86,8 +86,8 @@ resources:
     cpu: 100m
     memory: 128Mi
   requests:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 50m
+    memory: 64Mi
 
 nodeSelector: {}
 
@@ -104,13 +104,13 @@ externalPostgresql:
   host: "srecource-postgresql"
 
   ## Database port
-  port: "5432"
+  port: "5000"
 
   ## Database user
   user: "sre_user"
 
   ## Database password
-  password: "sre_password"
+  password: ""
 
   ## Database name
   database: "sredatabase"
