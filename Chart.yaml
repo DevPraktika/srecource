@@ -5,8 +5,8 @@ description: A Helm chart for SreCourceApi
 
 type: application
 
-version: 0.2.0
-appVersion: "c4f3862"
+version: 0.3.0
+appVersion: "f0135e1"
 
 dependencies:
 - condition: postgresql.enabled

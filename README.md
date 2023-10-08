@@ -74,8 +74,8 @@
 |--|--|--|
 | dotnetEnv | Значение DOTNET_ENVIRONMENT приложения | Development |
 | replicaCount | Число реплик приложения | 1 |
-| livenessProbe | Проверка живо ли приложение | path: /healthz/live  <br> initialDelaySeconds: 10  <br> periodSeconds: 20 |
-| readinessProbe | Проба готовности принимать траффик | path: /healthz/ready <br> initialDelaySeconds: 10  <br> periodSeconds: 20 |
+| livenessProbe | Проверка живо ли приложение | path: /healthz/live  <br> initialDelaySeconds: 5 <br> periodSeconds: 10 |
+| readinessProbe | Проба готовности принимать траффик | path: /healthz/ready <br> initialDelaySeconds: 5  <br> periodSeconds: 5 |
 | service.port | Порт приложения | 80 |
 | ingress.enabled | Маршрутизации внешнего трафика | true |
 | ingress.hosts.host | Внешнее имя приложения | api.student65.sre |
